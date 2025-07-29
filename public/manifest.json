@@ -1,0 +1,71 @@
+{
+  "name": "BrokerPro - แอพรายรับรายจ่ายสำหรับนายหน้า",
+  "short_name": "BrokerPro",
+  "description": "ระบบจัดการรายรับ-รายจ่ายสำหรับนายหน้าอสังหาริมทรัพย์ที่ทันสมัย",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#fb923c",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "th",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-apple-touch.png",
+      "sizes": "180x180", 
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshot-desktop.png", 
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "เพิ่มรายรับ",
+      "short_name": "รายรับ",
+      "description": "เพิ่มรายรับใหม่",
+      "url": "/income",
+      "icons": [{ "src": "/shortcut-income.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "เพิ่มรายจ่าย", 
+      "short_name": "รายจ่าย",
+      "description": "เพิ่มรายจ่ายใหม่",
+      "url": "/expense",
+      "icons": [{ "src": "/shortcut-expense.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "ดูรายงาน",
+      "short_name": "รายงาน", 
+      "description": "ดูรายงานสรุป",
+      "url": "/report",
+      "icons": [{ "src": "/shortcut-report.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
