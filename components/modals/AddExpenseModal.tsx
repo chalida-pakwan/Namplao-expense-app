@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, Plus, DollarSign, FileText, Calendar } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
+import ExpenseReceiptUpload from '../ExpenseReceiptUpload'
 
 interface AddExpenseModalProps {
   isOpen: boolean
@@ -17,7 +18,9 @@ export default function AddExpenseModal({ isOpen, onClose, carId, onExpenseAdded
     description: '',
     amount: '',
     category: 'ซ่อมแซม',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    receiptUrl: '',
+    receiptPath: ''
   })
   const [loading, setLoading] = useState(false)
   const supabase = createClientComponentClient()
@@ -32,6 +35,14 @@ export default function AddExpenseModal({ isOpen, onClose, carId, onExpenseAdded
     'อะไหล่',
     'อื่นๆ'
   ]
+
+  const handleFileUploaded = (filePath: string, fileUrl: string) => {
+    setExpense(prev => ({
+      ...prev,
+      receiptPath: filePath,
+      receiptUrl: fileUrl
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +82,9 @@ export default function AddExpenseModal({ isOpen, onClose, carId, onExpenseAdded
         amount: parseFloat(expense.amount),
         date: expense.date,
         added_by: user.id,
-        added_at: new Date().toISOString()
+        added_at: new Date().toISOString(),
+        receipt_url: expense.receiptUrl || null,
+        receipt_path: expense.receiptPath || null
       }
 
       const updatedExpenses = [...currentExpenses, newExpense]
@@ -95,7 +108,9 @@ export default function AddExpenseModal({ isOpen, onClose, carId, onExpenseAdded
         description: '',
         amount: '',
         category: 'ซ่อมแซม',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        receiptUrl: '',
+        receiptPath: ''
       })
       
       onExpenseAdded()
@@ -196,6 +211,14 @@ export default function AddExpenseModal({ isOpen, onClose, carId, onExpenseAdded
               required
             />
           </div>
+
+          {/* Receipt Upload */}
+          <ExpenseReceiptUpload
+            onFileUploaded={handleFileUploaded}
+            currentFileUrl={expense.receiptUrl}
+            maxSize={5}
+            accept="image/*,.pdf"
+          />
 
           {/* Submit Buttons */}
           <div className="flex space-x-3 pt-4">

@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react'
 import supabase from '@/lib/supabaseClient'
 import FileUpload from './FileUpload'
+import ExpenseReceiptUpload from './ExpenseReceiptUpload'
 
 interface CarExpense {
   id: string
   description: string
   amount: number
   receipt_image?: string
+  receipt_url?: string
+  receipt_path?: string
+  receipt_uploaded_at?: string
   expense_date: string
   created_at: string
   created_by: string
@@ -32,7 +36,15 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
   const [amount, setAmount] = useState('')
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0])
   const [receiptImage, setReceiptImage] = useState('')
+  const [receiptUrl, setReceiptUrl] = useState('')
+  const [receiptPath, setReceiptPath] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const handleFileUploaded = (filePath: string, fileUrl: string) => {
+    setReceiptPath(filePath)
+    setReceiptUrl(fileUrl)
+    setReceiptImage(fileUrl) // รักษา backward compatibility
+  }
 
   useEffect(() => {
     fetchExpenses()
@@ -74,6 +86,8 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
     setAmount('')
     setExpenseDate(new Date().toISOString().split('T')[0])
     setReceiptImage('')
+    setReceiptUrl('')
+    setReceiptPath('')
     setEditingExpense(null)
     setShowAddForm(false)
   }
@@ -91,7 +105,10 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
         description: description.trim(),
         amount: parseFloat(amount),
         expense_date: expenseDate,
-        receipt_image: receiptImage || null
+        receipt_image: receiptImage || null,
+        receipt_url: receiptUrl || null,
+        receipt_path: receiptPath || null,
+        receipt_uploaded_at: receiptUrl ? new Date().toISOString() : null
       }
 
       if (editingExpense) {
@@ -133,6 +150,8 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
     setAmount(expense.amount.toString())
     setExpenseDate(expense.expense_date)
     setReceiptImage(expense.receipt_image || '')
+    setReceiptUrl(expense.receipt_url || '')
+    setReceiptPath(expense.receipt_path || '')
     setShowAddForm(true)
   }
 
@@ -160,7 +179,7 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
     }
   }
 
-  const handleFileUploaded = (filePath: string, fileUrl: string) => {
+  const handleOldFileUploaded = (filePath: string, fileUrl: string) => {
     setReceiptImage(fileUrl)
   }
 
@@ -257,24 +276,12 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  แนบสลิป/ใบเสร็จ
-                </label>
-                <FileUpload
+                <ExpenseReceiptUpload
                   onFileUploaded={handleFileUploaded}
-                  allowedTypes={['image/*']}
+                  currentFileUrl={receiptUrl || receiptImage}
                   maxSize={5}
-                  folder="car-receipts"
+                  accept="image/*,.pdf"
                 />
-                {receiptImage && (
-                  <div className="mt-2">
-                    <img
-                      src={receiptImage}
-                      alt="สลิป"
-                      className="h-20 w-20 object-cover rounded border"
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
@@ -328,17 +335,27 @@ export default function SecureCarExpenses({ carId, currentUserId }: SecureCarExp
                     <div>💁‍♂️ โดย: {expense.user_name}</div>
                     <div>📅 {formatDateTime(expense.created_at)}</div>
                   </div>
+                  
+                  {/* แสดงลิงก์หลักฐาน */}
+                  {(expense.receipt_url || expense.receipt_image) && (
+                    <div className="mt-2">
+                      <a
+                        href={expense.receipt_url || expense.receipt_image}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span>� ดูหลักฐานสลิป/ใบเสร็จ</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 ml-4">
-                  {expense.receipt_image && (
-                    <button
-                      onClick={() => window.open(expense.receipt_image, '_blank')}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
-                    >
-                      🔍 ดูสลิป
-                    </button>
-                  )}
+                  {/* ลบปุ่มเก่าที่ซ้ำ */}
                   
                   {expense.created_by === currentUserId && (
                     <div className="flex gap-1">

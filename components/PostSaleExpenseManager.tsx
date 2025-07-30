@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createExpenseShareNotifications } from './NotificationSystem'
+import ExpenseReceiptUpload from './ExpenseReceiptUpload'
 
 interface PostSaleExpense {
   id: string
@@ -12,6 +13,9 @@ interface PostSaleExpense {
   date: string
   paid_by: string
   created_at: string
+  receipt_url?: string
+  receipt_path?: string
+  receipt_uploaded_at?: string
   split_method: 'equal' | 'percentage' | 'custom'
   expense_splits: Array<{
     investor_name: string
@@ -46,6 +50,8 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
     amount: 0,
     paid_by: '',
     split_method: 'percentage' as 'equal' | 'percentage' | 'custom',
+    receipt_url: '',
+    receipt_path: '',
     custom_splits: car.investors.map(investor => ({
       name: investor.name,
       amount: 0
@@ -57,6 +63,14 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
   useEffect(() => {
     fetchExpenses()
   }, [car.id])
+
+  const handleFileUploaded = (filePath: string, fileUrl: string) => {
+    setNewExpense(prev => ({
+      ...prev,
+      receipt_path: filePath,
+      receipt_url: fileUrl
+    }))
+  }
 
   const fetchExpenses = async () => {
     try {
@@ -132,7 +146,10 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
           date: new Date().toISOString(),
           paid_by: newExpense.paid_by,
           split_method: newExpense.split_method,
-          expense_splits: splits
+          expense_splits: splits,
+          receipt_url: newExpense.receipt_url || null,
+          receipt_path: newExpense.receipt_path || null,
+          receipt_uploaded_at: newExpense.receipt_url ? new Date().toISOString() : null
         })
         .select()
 
@@ -152,6 +169,8 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
         amount: 0,
         paid_by: '',
         split_method: 'percentage',
+        receipt_url: '',
+        receipt_path: '',
         custom_splits: car.investors.map(investor => ({
           name: investor.name,
           amount: 0
@@ -307,6 +326,14 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
             </div>
           </div>
 
+          {/* Receipt Upload */}
+          <ExpenseReceiptUpload
+            onFileUploaded={handleFileUploaded}
+            currentFileUrl={newExpense.receipt_url}
+            maxSize={5}
+            accept="image/*,.pdf"
+          />
+
           {/* การแบ่งจ่ายแบบกำหนดเอง */}
           {newExpense.split_method === 'custom' && (
             <div className="mb-4">
@@ -388,6 +415,22 @@ export default function PostSaleExpenseManager({ car, onExpenseAdded }: PostSale
                     จ่ายโดย: {expense.paid_by} | 
                     วันที่: {new Date(expense.date).toLocaleDateString('th-TH')}
                   </p>
+                  {/* แสดงลิงก์หลักฐาน */}
+                  {expense.receipt_url && (
+                    <div className="mt-2">
+                      <a
+                        href={expense.receipt_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span>📎 ดูหลักฐานสลิป/ใบเสร็จ</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className={`text-sm px-2 py-1 rounded ${
