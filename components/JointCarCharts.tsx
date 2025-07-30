@@ -14,6 +14,7 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Bar, Line, Pie } from 'react-chartjs-2'
+import { useRouter } from 'next/navigation'
 
 ChartJS.register(
   CategoryScale,
@@ -44,6 +45,7 @@ interface JointCarChartsProps {
 }
 
 export default function JointCarCharts({ cars }: JointCarChartsProps) {
+  const router = useRouter()
   const [chartType, setChartType] = useState<'monthly' | 'yearly' | 'status' | 'brand'>('monthly')
 
   // ข้อมูลกำไรรายเดือน
@@ -263,7 +265,25 @@ export default function JointCarCharts({ cars }: JointCarChartsProps) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-orange-100">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">📊 กราฟและสถิติ</h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2 md:mb-0">📊 กราฟและสถิติ</h2>
+          
+          <div className="flex gap-3">
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md flex items-center gap-2 transition-colors"
+              onClick={() => router.push('/carshare/join')}
+            >
+              <span role="img" aria-label="lock">🔐</span> เข้าร่วมรถ
+            </button>
+
+            <button
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl shadow-md flex items-center gap-2 transition-colors"
+              onClick={() => router.push('/carshare/add')}
+            >
+              ➕ เพิ่มรถใหม่
+            </button>
+          </div>
+        </div>
         
         {/* สถิติสรุป */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
