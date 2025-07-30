@@ -66,10 +66,10 @@
 
 ### 🚀 Git Repository Status:
 - **Repository**: `chalida-pakwan/Namplao-expense-app`
-- **Latest Feature**: Receipt Attachment System
-- **Previous Commit**: `27a9e50` - Edit History Integration
-- **Branch**: `main` ✅ **Ready for Commit**
-- **New Files**: ExpenseReceiptUpload.tsx, add_receipt_support.sql, RECEIPT_SYSTEM.md
+- **Latest Commit**: `f13a1d1` - Receipt System v1.2 ✅ **DEPLOYED**
+- **Previous Commit**: `89386e2` - Edit History Integration
+- **Branch**: `main` 🌐 **LIVE ON GITHUB**
+- **Status**: All files committed and pushed successfully
 
 ### 📍 Current Usage Flow:
 1. **🏠 Dashboard** → ภาพรวมและกราฟรายรับ-รายจ่าย
