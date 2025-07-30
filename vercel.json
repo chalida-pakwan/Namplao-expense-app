@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "name": "expense-income-broker-app",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "แอพ รายรับ-รายจ่าย สำหรับนายหน้า",
+    "NEXT_PUBLIC_APP_VERSION": "1.0.0"
+  },
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "functions": {
+    "app/**/*.ts": {
+      "maxDuration": 30
+    },
+    "app/**/*.tsx": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["sin1"],
+  "framework": "nextjs"
+}

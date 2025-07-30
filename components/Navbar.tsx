@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import supabase from '@/lib/supabaseClient'
+import NotificationSystem from './NotificationSystem'
 
 export default function Navbar() {
   const router = useRouter()
@@ -47,9 +48,15 @@ export default function Navbar() {
             <NavLink href="/dashboard" icon="🏠" text="หน้าแรก" />
             <NavLink href="/income" icon="💰" text="รายรับ" />
             <NavLink href="/expense" icon="💸" text="รายจ่าย" />
+            <NavLink href="/joint-cars" icon="🚗" text="หารรถ" />
             <NavLink href="/records" icon="📄" text="รายการ" />
             <NavLink href="/report" icon="📊" text="รายงาน" />
             <NavLink href="/settings" icon="⚙️" text="ตั้งค่า" />
+            
+            {/* Notification System */}
+            <div className="ml-2">
+              <NotificationSystem />
+            </div>
             
             {/* Logout Button */}
             <button
@@ -98,6 +105,7 @@ export default function Navbar() {
             <MobileNavLink href="/dashboard" icon="🏠" text="หน้าแรก" onClick={() => setIsMobileMenuOpen(false)} />
             <MobileNavLink href="/income" icon="💰" text="รายรับ" onClick={() => setIsMobileMenuOpen(false)} />
             <MobileNavLink href="/expense" icon="💸" text="รายจ่าย" onClick={() => setIsMobileMenuOpen(false)} />
+            <MobileNavLink href="/joint-cars" icon="🚗" text="หารรถ" onClick={() => setIsMobileMenuOpen(false)} />
             <MobileNavLink href="/records" icon="📄" text="รายการย้อนหลัง" onClick={() => setIsMobileMenuOpen(false)} />
             <MobileNavLink href="/report" icon="📊" text="รายงาน" onClick={() => setIsMobileMenuOpen(false)} />
             <MobileNavLink href="/settings" icon="⚙️" text="ตั้งค่า" onClick={() => setIsMobileMenuOpen(false)} />

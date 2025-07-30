@@ -1,0 +1,281 @@
+# 🚀 คู่มือการ Deploy แอพออนไลน์
+
+## 📋 Checklist ก่อน Deploy
+
+### ✅ 1. เตรียมพื้นฐาน
+- [ ] ติดตั้ง Git และสร้าง Repository
+- [ ] สร้าง Supabase Project
+- [ ] เตรียม Environment Variables
+- [ ] ทดสอบระบบใน Local
+
+### ✅ 2. Database Setup
+- [ ] Run Database Schema
+- [ ] เปิดใช้งาน RLS Policies
+- [ ] ทดสอบ Authentication
+- [ ] Import ข้อมูลตัวอย่าง (ถ้ามี)
+
+### ✅ 3. Code Preparation
+- [ ] ตรวจสอบ TypeScript Errors
+- [ ] ทำ Build Test
+- [ ] อัปเดต README
+- [ ] Commit & Push to GitHub
+
+---
+
+## 🔧 ขั้นตอนการ Deploy
+
+### 🗄️ 1. Setup Supabase (Production)
+
+#### A. สร้าง Project ใหม่
+1. เข้า [https://supabase.com/dashboard](https://supabase.com/dashboard)
+2. คลิก "New Project"
+3. เลือก Organization และกรอกข้อมูล:
+   - **Project Name**: `broker-expense-app`
+   - **Database Password**: สร้างรหัสผ่านที่แข็งแกร่ง
+   - **Region**: Singapore (Southeast Asia)
+
+#### B. Import Database Schema
+1. ไปที่ SQL Editor ใน Supabase Dashboard
+2. Run ไฟล์ `database/schema.sql`
+3. Run ไฟล์ `database/add_profit_analysis_fields.sql`
+4. ตรวจสอบ Tables ใน Table Editor
+
+#### C. Setup Authentication
+```sql
+-- Enable email authentication
+-- ใน Authentication > Settings
+-- Enable "Email Confirmations" if needed
+```
+
+#### D. Configure RLS Policies
+```sql
+-- Example policies (run in SQL Editor)
+-- สำหรับ income_expense table
+CREATE POLICY "Users can view own expenses" ON income_expense
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own expenses" ON income_expense
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own expenses" ON income_expense
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own expenses" ON income_expense
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- สำหรับ joint_cars table
+CREATE POLICY "Users can view own cars" ON joint_cars
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own cars" ON joint_cars
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own cars" ON joint_cars
+    FOR UPDATE USING (auth.uid() = user_id);
+```
+
+#### E. Get API Keys
+1. ไปที่ Settings > API
+2. Copy:
+   - **Project URL**: `https://xxxxx.supabase.co`
+   - **Anon (public) key**: `eyJhbGciOi...`
+   - **Service Role key**: `eyJhbGciOi...` (สำหรับ admin operations)
+
+---
+
+### 🐙 2. Setup GitHub Repository
+
+#### A. Initialize Git (ถ้ายังไม่ได้ทำ)
+```bash
+cd /path/to/your/project
+git init
+git add .
+git commit -m "Initial commit: Complete broker expense app with joint car investment system"
+```
+
+#### B. Create GitHub Repository
+1. เข้า [https://github.com/new](https://github.com/new)
+2. สร้าง Repository ใหม่:
+   - **Repository Name**: `broker-expense-app`
+   - **Description**: `แอพ รายรับ-รายจ่าย สำหรับนายหน้า พร้อมระบบลงทุนร่วมซื้อรถ`
+   - **Visibility**: Private (แนะนำ)
+
+#### C. Push Code to GitHub
+```bash
+git remote add origin https://github.com/yourusername/broker-expense-app.git
+git branch -M main
+git push -u origin main
+```
+
+---
+
+### ☁️ 3. Deploy to Vercel
+
+#### A. Setup Vercel Account
+1. เข้า [https://vercel.com](https://vercel.com)
+2. Sign up/Login ด้วย GitHub Account
+3. Connect GitHub Repository
+
+#### B. Import Project
+1. คลิก "New Project"
+2. เลือก Repository: `broker-expense-app`
+3. Configure Project:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `./`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
+
+#### C. Environment Variables
+ใน Vercel Dashboard > Settings > Environment Variables:
+
+```bash
+# Production Environment Variables
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+NEXT_PUBLIC_APP_NAME=แอพ รายรับ-รายจ่าย สำหรับนายหน้า
+NEXT_PUBLIC_APP_VERSION=1.0.0
+NEXTAUTH_SECRET=your_super_secret_random_string_here
+NEXTAUTH_URL=https://your-app-name.vercel.app
+```
+
+#### D. Deploy
+1. คลิก "Deploy"
+2. รอจนกว่า Build จะเสร็จ
+3. ได้ URL: `https://your-app-name.vercel.app`
+
+---
+
+### 🌐 4. Custom Domain (ทางเลือก)
+
+#### A. ถ้ามี Domain เป็นของตัวเอง
+1. ไปที่ Vercel Dashboard > Settings > Domains
+2. เพิ่ม Custom Domain
+3. ตั้งค่า DNS Records ตามที่ Vercel แนะนำ
+
+#### B. อัปเดต Environment Variables
+```bash
+NEXTAUTH_URL=https://yourdomain.com
+```
+
+---
+
+## 🔍 การทดสอบหลัง Deploy
+
+### ✅ Basic Functionality Test
+1. **Authentication**
+   - [ ] Sign Up ใหม่
+   - [ ] Login/Logout
+   - [ ] Password Reset
+
+2. **Income/Expense Management**
+   - [ ] เพิ่มรายการรายรับ
+   - [ ] เพิ่มรายการรายจ่าย
+   - [ ] แก้ไขรายการ
+   - [ ] ลบรายการ
+
+3. **Joint Car Investment**
+   - [ ] เพิ่มรถใหม่
+   - [ ] เพิ่มผู้ลงทุน
+   - [ ] คำนวณกำไร-ขาดทุน
+   - [ ] อัปโหลดรูปภาพ
+
+4. **Advanced Features**
+   - [ ] Dashboard Analytics
+   - [ ] Advanced Search/Filter
+   - [ ] Export Data (JSON/CSV/Excel/PDF)
+
+### 🐛 Troubleshooting
+
+#### Database Connection Issues
+```bash
+# ตรวจสอบ Network logs ใน Browser
+# เช็ค Supabase Project Status
+# ยืนยัน API Keys ใน Environment Variables
+```
+
+#### Build Errors
+```bash
+# Local test
+npm run build
+
+# Check TypeScript
+npm run type-check
+
+# Check Lint
+npm run lint
+```
+
+#### Authentication Problems
+```bash
+# ตรวจสอบ NEXTAUTH_URL
+# เช็ค Supabase Auth Settings
+# ยืนยัน RLS Policies
+```
+
+---
+
+## 🔐 Security Best Practices
+
+### 🛡️ Environment Variables
+- ✅ ไม่เก็บ Secret Keys ใน Code
+- ✅ ใช้ Strong Random Strings สำหรับ NEXTAUTH_SECRET
+- ✅ จำกัดสิทธิ์ Service Role Key
+
+### 🔒 Database Security
+- ✅ เปิดใช้งาน RLS ทุก Table
+- ✅ Policies ให้เข้าถึงได้เฉพาะข้อมูลของตัวเอง
+- ✅ Regular Backup Database
+
+### 🌐 Network Security
+- ✅ HTTPS Only (Vercel จัดการให้อัตโนมัติ)
+- ✅ CORS Settings ใน Supabase
+- ✅ Rate Limiting (Vercel Pro feature)
+
+---
+
+## 📊 Monitoring & Maintenance
+
+### 📈 Analytics
+- **Vercel Analytics**: ติดตาม Performance
+- **Supabase Metrics**: ดู Database Usage
+- **User Activity**: Monitor ผ่าน Dashboard
+
+### 🔄 Updates
+```bash
+# Regular dependency updates
+npm update
+
+# Security patches
+npm audit fix
+
+# Deploy updates
+git add .
+git commit -m "Update: description"
+git push
+# Auto-deploy จาก Vercel
+```
+
+### 💾 Backup Strategy
+1. **Database**: Supabase Auto-backup + Manual Export
+2. **Code**: GitHub Repository + Tags
+3. **Environment**: Document all configurations
+
+---
+
+## 📞 Support & Documentation
+
+### 🆘 หากมีปัญหา
+1. ตรวจสอบ Vercel Deployment Logs
+2. เช็ค Supabase Logs
+3. ดู Browser Console Errors
+4. อ่าน Error Messages จาก API
+
+### 📚 Resources
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Vercel Documentation](https://vercel.com/docs)
+
+---
+
+🎉 **ยินดีด้วย! แอพของคุณออนไลน์แล้ว** 🎉
