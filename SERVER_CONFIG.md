@@ -113,3 +113,87 @@ npm run dev
 - เริ่มจากฟีเจอร์ที่ใช้งานได้ทันทีและให้ผลลัพธ์ชัดเจน
 - ทดสอบกับผู้ใช้จริงก่อนทำฟีเจอร์ที่ซับซ้อน
 - สำรองข้อมูลก่อนเพิ่มฟีเจอร์ใหม่ทุกครั้ง
+
+---
+
+## ✅ แผนงานต่อไป (Next Action Plan)
+
+### Phase 1: UI Enhancement & Interface (1-2 วัน)
+#### 🎨 1. แก้หน้า UI → เพิ่มปุ่มและอินเตอร์เฟซ
+- ✅ **ปุ่มเพิ่มค่าใช้จ่าย** พร้อมไอคอน 💰
+- ✅ **ปุ่มดูกราฟผลกำไร-ต้นทุนรายคัน** 📊  
+- ✅ **ปุ่มดูบันทึกการแก้ไข** (Edit Log) 🕵️‍♀️
+
+**ไฟล์ที่ต้องแก้:**
+- `app/joint-cars/[id]/page.tsx` - เพิ่มปุ่มในส่วน header
+- `app/secure-cars/[id]/page.tsx` - เพิ่มปุ่มในส่วน navigation tabs
+
+### Phase 2: Chart System Implementation (2-3 วัน)
+#### 📊 2. เพิ่มระบบแสดงผลกราฟ (Chart.js)
+- 📈 **กราฟเส้น:** ต้นทุนรวม vs ราคาขาย
+- 📊 **กราฟแท่ง:** เปรียบเทียบรายได้-รายจ่าย  
+- 🥧 **กราฟวงกลม:** แสดงสัดส่วนผู้ลงทุน
+
+**Dependencies ที่ต้องติดตั้ง:**
+```bash
+npm install chart.js react-chartjs-2
+```
+
+**ไฟล์ใหม่ที่จะสร้าง:**
+- `components/charts/LineChart.tsx` - กราฟเส้น
+- `components/charts/BarChart.tsx` - กราฟแท่ง  
+- `components/charts/PieChart.tsx` - กราฟวงกลม
+- `components/charts/ChartContainer.tsx` - Container หลัก
+
+### Phase 3: API & Backend (2-3 วัน)
+#### 🔌 3. เขียน API สำหรับบันทึกการแก้ไข
+- 📝 **POST /api/edit-logs** → บันทึกใครแก้ไขอะไร เมื่อไหร่
+- 📋 **GET /api/edit-logs?carId=xxxx** → ดูประวัติการเปลี่ยนแปลงในแต่ละคัน
+
+**Database Schema ที่ต้องเพิ่ม:**
+```sql
+CREATE TABLE edit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  car_id UUID REFERENCES joint_cars(id),
+  user_id UUID REFERENCES auth.users(id),
+  action TEXT NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE'
+  field_name TEXT, -- 'status', 'price', 'expenses'
+  old_value TEXT,
+  new_value TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**ไฟล์ API ใหม่:**
+- `app/api/edit-logs/route.ts` - Main API endpoint
+- `app/api/edit-logs/[carId]/route.ts` - Get logs by car
+- `lib/audit-logger.ts` - Utility functions
+
+### 🎯 Timeline Summary
+- **Week 1:** UI Buttons & Interface Enhancement
+- **Week 2:** Chart.js Integration & Visualization  
+- **Week 3:** Edit Logs API & Database Implementation
+
+### 🔧 Technical Requirements
+```json
+{
+  "chart.js": "^4.4.0",
+  "react-chartjs-2": "^5.2.0",
+  "date-fns": "^2.30.0",
+  "lucide-react": "^0.263.1"
+}
+```
+
+### 📋 Success Metrics
+- ⏱️ ใช้เวลาดูข้อมูลลดลง 50%
+- 📊 ผู้ใช้เปิดดูกราฟเพิ่มขึ้น 80%
+- 🔍 ตรวจสอบประวัติการแก้ไขได้ 100%
+- 😊 ความพึงพอใจ UI/UX เพิ่มขึ้น
+
+### 🚀 Ready to Start
+ต้องการเริ่มจากไหนก่อนครับ?
+1. **UI Enhancement** (ง่ายที่สุด, ให้ผลเร็ว)
+2. **Chart Integration** (ผลลัพธ์ชัดเจน)  
+3. **Edit Logs API** (Foundation สำคัญ)

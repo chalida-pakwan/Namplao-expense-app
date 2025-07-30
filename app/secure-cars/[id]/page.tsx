@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Plus, BarChart3, History } from 'lucide-react'
 import supabase from '@/lib/supabaseClient'
 import SecureCarExpenses from '@/components/SecureCarExpenses'
 import CarMembersManager from '@/components/CarMembersManager'
+import AddExpenseModal from '../../../components/modals/AddExpenseModal'
+import ChartModal from '../../../components/modals/ChartModal'
+import EditLogModal from '../../../components/modals/EditLogModal'
 
 interface SecureCarDetail {
   id: string
@@ -33,6 +37,11 @@ function SecureCarDetail({ carId }: { carId: string }) {
   const [isMember, setIsMember] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
+
+  // Modal states
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false)
+  const [showChartModal, setShowChartModal] = useState(false)
+  const [showEditLogModal, setShowEditLogModal] = useState(false)
   
   const router = useRouter()
 
@@ -187,6 +196,38 @@ function SecureCarDetail({ carId }: { carId: string }) {
             </div>
             
             <div className="flex items-center space-x-3">
+              {/* New Action Buttons - Updated Style */}
+              <div className="flex justify-end gap-3">
+                {isOwner && (
+                  <button
+                    onClick={() => setShowAddExpenseModal(true)}
+                    className="bg-orange-300 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded flex items-center space-x-2"
+                    title="เพิ่มค่าใช้จ่าย"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>เพิ่มค่าใช้จ่าย</span>
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => setShowChartModal(true)}
+                  className="bg-white text-orange-500 border border-orange-300 hover:bg-orange-100 font-semibold py-2 px-4 rounded flex items-center space-x-2"
+                  title="ดูกราฟกำไร"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>ดูกราฟ</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowEditLogModal(true)}
+                  className="bg-white text-orange-500 border border-orange-300 hover:bg-orange-100 font-semibold py-2 px-4 rounded flex items-center space-x-2"
+                  title="ประวัติการแก้ไข"
+                >
+                  <History className="w-4 h-4" />
+                  <span>ดูประวัติ</span>
+                </button>
+              </div>
+
               <div className={`px-4 py-2 rounded-lg border ${getStatusColor(car.status)}`}>
                 {car.status}
               </div>
@@ -248,6 +289,30 @@ function SecureCarDetail({ carId }: { carId: string }) {
 
         {/* Tab Content */}
         <div className="space-y-8">
+          {/* Action Buttons Section */}
+          <div className="flex justify-end gap-3 mb-4">
+            {isOwner && (
+              <button 
+                onClick={() => setShowAddExpenseModal(true)}
+                className="bg-orange-300 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded"
+              >
+                ➕ เพิ่มค่าใช้จ่าย
+              </button>
+            )}
+            <button 
+              onClick={() => setShowChartModal(true)}
+              className="bg-white text-orange-500 border border-orange-300 hover:bg-orange-100 font-semibold py-2 px-4 rounded"
+            >
+              📈 ดูกราฟ
+            </button>
+            <button 
+              onClick={() => setShowEditLogModal(true)}
+              className="bg-white text-orange-500 border border-orange-300 hover:bg-orange-100 font-semibold py-2 px-4 rounded"
+            >
+              📝 ดูประวัติ
+            </button>
+          </div>
+
           {activeTab === 'expenses' && (
             <SecureCarExpenses 
               carId={carId} 
@@ -265,6 +330,29 @@ function SecureCarDetail({ carId }: { carId: string }) {
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <AddExpenseModal
+        isOpen={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        carId={carId}
+        onExpenseAdded={() => {
+          // Refresh page or update data
+          window.location.reload()
+        }}
+      />
+
+      <ChartModal
+        isOpen={showChartModal}
+        onClose={() => setShowChartModal(false)}
+        car={car}
+      />
+
+      <EditLogModal
+        isOpen={showEditLogModal}
+        onClose={() => setShowEditLogModal(false)}
+        carId={carId}
+      />
     </div>
   )
 }

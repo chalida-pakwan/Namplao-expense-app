@@ -8,6 +8,9 @@ import EnhancedDashboard from '../../components/EnhancedDashboard'
 import AdvancedSearch from '../../components/AdvancedSearch'
 import DataExport from '../../components/DataExport'
 import PDFExport from '../../components/PDFExport'
+import AddExpenseModal from '@/components/modals/AddExpenseModal'
+import ChartModal from '@/components/modals/ChartModal'
+import EditLogModal from '@/components/modals/EditLogModal'
 
 interface JointCar {
   id: string
@@ -34,6 +37,12 @@ export default function JointCarsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('ทั้งหมด')
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Modal states
+  const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false)
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false)
+  const [isEditLogModalOpen, setIsEditLogModalOpen] = useState(false)
+  const [userId, setUserId] = useState('')
 
   const statusOptions = ['ทั้งหมด', 'กำลังหา', 'ซื้อแล้ว', 'ขายแล้ว', 'ยกเลิก']
   const statusEmojis: { [key: string]: string } = {
@@ -58,6 +67,8 @@ export default function JointCarsPage() {
         router.push('/auth')
         return
       }
+
+      setUserId(user.id)
 
       const { data, error } = await supabase
         .from('joint_cars')
@@ -170,6 +181,67 @@ export default function JointCarsPage() {
               <span>📋</span>
               หารรถทั่วไป
             </button>
+          </div>
+        </div>
+
+        {/* Management Tools Section */}
+        <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl shadow-lg p-6 mb-6 border border-orange-200">
+          <div className="text-orange-800 font-semibold text-lg mb-3 flex items-center gap-2">
+            <span>🔧</span>
+            เครื่องมือจัดการ
+          </div>
+          <p className="text-gray-600 text-sm mb-4">เครื่องมือสำหรับจัดการข้อมูลรถร่วมลงทุน</p>
+          
+          {/* Desktop Layout */}
+          <div className="hidden md:flex gap-4 justify-center">
+            <button 
+              className="bg-orange-300 hover:bg-orange-400 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 min-w-[200px] justify-center"
+              onClick={() => setIsAddExpenseModalOpen(true)}
+            >
+              <span>➕</span>
+              เพิ่มรายจ่าย
+            </button>
+            <button 
+              className="bg-white text-orange-500 border-2 border-orange-300 hover:bg-orange-50 font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 min-w-[200px] justify-center"
+              onClick={() => setIsChartModalOpen(true)}
+            >
+              <span>📊</span>
+              ดูกราฟข้อมูล
+            </button>
+            <button 
+              className="bg-white text-orange-500 border-2 border-orange-300 hover:bg-orange-50 font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 min-w-[200px] justify-center"
+              onClick={() => setIsEditLogModalOpen(true)}
+            >
+              <span>📝</span>
+              ประวัติการแก้ไข
+            </button>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="md:hidden space-y-3">
+            <button 
+              className="w-full bg-orange-300 hover:bg-orange-400 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 justify-center"
+              onClick={() => setIsAddExpenseModalOpen(true)}
+            >
+              <span>➕</span>
+              เพิ่มรายจ่าย
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                className="bg-white text-orange-500 border-2 border-orange-300 hover:bg-orange-50 font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 justify-center text-sm"
+                onClick={() => setIsChartModalOpen(true)}
+              >
+                <span>📊</span>
+                ดูกราฟ
+              </button>
+              <button 
+                className="bg-white text-orange-500 border-2 border-orange-300 hover:bg-orange-50 font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 justify-center text-sm"
+                onClick={() => setIsEditLogModalOpen(true)}
+              >
+                <span>📝</span>
+                ประวัติ
+              </button>
+            </div>
           </div>
         </div>
 
@@ -333,6 +405,35 @@ export default function JointCarsPage() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <AddExpenseModal 
+        isOpen={isAddExpenseModalOpen} 
+        onClose={() => setIsAddExpenseModalOpen(false)}
+        carId="joint-cars" // ใช้ "joint-cars" สำหรับรายจ่ายในหน้านี้
+        onExpenseAdded={() => {
+          // Refresh data when expense is added
+          fetchCars()
+        }}
+      />
+      <ChartModal 
+        isOpen={isChartModalOpen} 
+        onClose={() => setIsChartModalOpen(false)}
+        car={{
+          id: 'joint-cars-overview',
+          title: 'ข้อมูลรถร่วมลงทุนทั้งหมด',
+          total_amount: stats.totalInvestment,
+          my_profit: stats.totalProfit,
+          created_at: new Date().toISOString(),
+          user_id: userId,
+          car_type: 'joint-cars'
+        }}
+      />
+      <EditLogModal 
+        isOpen={isEditLogModalOpen} 
+        onClose={() => setIsEditLogModalOpen(false)}
+        carId="joint-cars-log"
+      />
     </div>
   )
 }
