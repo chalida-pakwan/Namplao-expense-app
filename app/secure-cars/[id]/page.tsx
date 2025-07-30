@@ -10,6 +10,7 @@ import CarMembersManager from '@/components/CarMembersManager'
 import AddExpenseModal from '../../../components/modals/AddExpenseModal'
 import ChartModal from '../../../components/modals/ChartModal'
 import EditLogModal from '../../../components/modals/EditLogModal'
+import EditLogList from '../../../components/EditLogList'
 
 interface SecureCarDetail {
   id: string
@@ -269,7 +270,8 @@ function SecureCarDetail({ carId }: { carId: string }) {
             <nav className="flex space-x-8">
               {[
                 { id: 'expenses', label: '💸 รายจ่าย', icon: '💸' },
-                { id: 'members', label: '👥 สมาชิก', icon: '👥' }
+                { id: 'members', label: '👥 สมาชิก', icon: '👥' },
+                { id: 'edit-history', label: '📝 ประวัติการแก้ไข', icon: '📝' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -327,6 +329,16 @@ function SecureCarDetail({ carId }: { carId: string }) {
               currentUserId={currentUser?.id}
               isOwner={isOwner}
             />
+          )}
+
+          {activeTab === 'edit-history' && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <History className="w-5 h-5 text-blue-500" />
+                <h3 className="text-lg font-semibold text-gray-800">ประวัติการแก้ไข</h3>
+              </div>
+              <EditLogList carId={carId} />
+            </div>
           )}
         </div>
       </div>

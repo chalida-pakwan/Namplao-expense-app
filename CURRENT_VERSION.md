@@ -9,6 +9,7 @@
 - ✅ `AddExpenseModal.tsx` - เพิ่มรายจ่ายพร้อม 8 หมวดหมู่
 - ✅ `ChartModal.tsx` - กราฟ 3 รูปแบบ (เส้น, แท่ง, วงกลม)
 - ✅ `EditLogModal.tsx` - ประวัติการแก้ไขแบบ timeline
+- ✅ `EditLogList.tsx` - Timeline UI component สำหรับแสดงประวัติในหน้า Detail
 
 #### 2. **Button Placement Strategy**
 - ✅ **หน้าหารรถ** (`/joint-cars`): ปุ่มเครื่องมือจัดการทั้ง 3
@@ -37,6 +38,7 @@
 - `components/modals/AddExpenseModal.tsx` (157 บรรทัด)
 - `components/modals/ChartModal.tsx` (186 บรรทัด)  
 - `components/modals/EditLogModal.tsx` (119 บรรทัด)
+- `components/EditLogList.tsx` (257 บรรทัด) - Timeline UI สำหรับประวัติการแก้ไข
 - `app/ui-test/page.tsx` (สำหรับทดสอบ UI)
 
 #### **ไฟล์ที่แก้ไข:**
@@ -51,9 +53,10 @@
 - **Remote:** ✅ Synced with GitHub
 
 ### 📍 การใช้งานปัจจุบัน:
-1. **Dashboard**: ดูสรุปภาพรวม + กราฉรายรับ-รายจ่าย
+1. **Dashboard**: ดูสรุปภาพรวม + กราฟรายรับ-รายจ่าย
 2. **หน้าหารรถ**: เครื่องมือจัดการ + ระบบหารรถ
-3. **Modal System**: พร้อมใช้งานครบทุกฟีเจอร์
+3. **Detail หน้ารถ**: Tab "📝 ประวัติการแก้ไข" - แสดง EditLogList พร้อม Timeline UI
+4. **Modal System**: พร้อมใช้งานครบทุกฟีเจอร์
 
 ### 🎯 Next Phase Planning:
 - **Phase 2**: PDF Export & Advanced Search

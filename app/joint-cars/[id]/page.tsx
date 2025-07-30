@@ -14,6 +14,7 @@ import UserPermissionManager, { useUserPermissions } from '../../../components/U
 import AddExpenseModal from '../../../components/modals/AddExpenseModal'
 import ChartModal from '../../../components/modals/ChartModal'
 import EditLogModal from '../../../components/modals/EditLogModal'
+import EditLogList from '../../../components/EditLogList'
 
 interface JointCar {
   id: string
@@ -272,6 +273,7 @@ function JointCarDetail({ carId }: { carId: string }) {
                 { id: 'images', label: '📸 รูปภาพ', icon: '📸' },
                 { id: 'charts', label: '📊 กราฟ', icon: '📊' },
                 { id: 'expenses', label: '💰 ค่าใช้จ่าย', icon: '💰' },
+                { id: 'edit-history', label: '📝 ประวัติการแก้ไข', icon: '📝' },
                 { id: 'export', label: '📄 ส่งออก', icon: '📄' },
                 ...(isOwner ? [{ id: 'permissions', label: '👥 สิทธิ์', icon: '👥' }] : [])
               ].map(tab => (
@@ -453,6 +455,17 @@ function JointCarDetail({ carId }: { carId: string }) {
               car={car} 
               onExpenseAdded={fetchCarDetails}
             />
+          )}
+
+          {/* Edit History Tab */}
+          {activeTab === 'edit-history' && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <History className="w-5 h-5 text-orange-500" />
+                <h3 className="text-lg font-semibold text-gray-800">ประวัติการแก้ไข</h3>
+              </div>
+              <EditLogList carId={carId} />
+            </div>
           )}
 
           {/* Export Tab */}
