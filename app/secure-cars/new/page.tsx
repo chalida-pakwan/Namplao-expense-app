@@ -96,6 +96,33 @@ export default function NewSecureCarPage() {
         router.push('/auth')
         return
       }
+
+      // Generate unique 6-digit security code
+      const generateSecurityCode = () => {
+        return Math.floor(100000 + Math.random() * 900000).toString()
+      }
+
+      // Check if code already exists
+      const ensureUniqueCode = async (): Promise<string> => {
+        let attempts = 0
+        while (attempts < 10) {
+          const code = generateSecurityCode()
+          const { data, error } = await supabase
+            .from('joint_cars')
+            .select('id')
+            .eq('car_code', code)
+            .single()
+          
+          if (error && error.code === 'PGRST116') {
+            // Code not found, it's unique
+            return code
+          }
+          attempts++
+        }
+        throw new Error('ไม่สามารถสร้างรหัสเฉพาะได้')
+      }
+
+      const securityCode = await ensureUniqueCode()
       
       // Calculate totals
       const totalInvestment = investors.reduce((sum, inv) => sum + inv.amount, 0)
@@ -115,12 +142,13 @@ export default function NewSecureCarPage() {
         status: status,
         notes: notes.trim(),
         created_by: user.id,
+        car_code: securityCode, // เพิ่มรหัสปลอดภัย
         investors: investors.filter(inv => inv.name.trim()),
         additional_expenses: [],
         images: []
       }
       
-      // Insert into joint_cars table (รหัส car_code จะถูกสร้างอัตโนมัติ)
+      // Insert into joint_cars table with security code
       const { data: carResult, error: carError } = await supabase
         .from('joint_cars')
         .insert([carData])
@@ -149,7 +177,20 @@ export default function NewSecureCarPage() {
         // ไม่ return เพราะรถสร้างสำเร็จแล้ว
       }
       
-      toast.success('🎉 สร้างรถสำเร็จ! รหัสรถถูกสร้างอัตโนมัติแล้ว')
+      // Show success message with security code
+      toast.success(`🎉 สร้างรถสำเร็จ! รหัสปลอดภัย: ${securityCode}`, {
+        duration: 6000,
+        style: {
+          background: '#10B981',
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: 'bold'
+        }
+      })
+      
+      // Show alert with the security code
+      alert(`🔐 รหัสปลอดภัยสำหรับรถคันนี้: ${securityCode}\n\nให้ใช้รหัสนี้เชิญสมาชิกเข้าร่วม\n(กรุณาเก็บรหัสนี้ไว้ให้ดี)`)
+      
       router.push(`/secure-cars/${carResult.id}`)
       
     } catch (error: any) {
