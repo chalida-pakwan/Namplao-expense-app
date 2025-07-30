@@ -4,8 +4,12 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
   },
-  // Enable standalone output for deployment
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Use regular build for Vercel deployment (better for dynamic routes)
+  output: process.env.GITHUB_PAGES ? 'export' : undefined,
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
   
   // Configure for mobile development
   devIndicators: {
