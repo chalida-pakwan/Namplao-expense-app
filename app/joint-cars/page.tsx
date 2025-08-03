@@ -176,10 +176,10 @@ export default function JointCarsPage() {
             </button>
             <button 
               className="transition-all transform hover:scale-105 bg-purple-100 text-gray-800 px-4 py-2 rounded-xl border border-purple-300 shadow hover:bg-purple-200 active:scale-95 flex items-center gap-2"
-              onClick={() => router.push('/cars')}
+              onClick={() => router.push('/secure-cars/new')}
             >
-              <span>📋</span>
-              หารรถทั่วไป
+              <span>🆕</span>
+              สร้างรถใหม่
             </button>
           </div>
         </div>

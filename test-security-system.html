@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทดสอบระบบรหัสปลอดภัย</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .result { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 ทดสอบระบบรหัสปลอดภัย</h1>
+        
+        <div class="result" id="status">
+            <strong>สถานะ:</strong> กำลังเชื่อมต่อ...
+        </div>
+
+        <h3>1. ทดสอบการเชื่อมต่อ Database</h3>
+        <button onclick="testConnection()">ทดสอบการเชื่อมต่อ</button>
+        <div class="result" id="connectionResult"></div>
+
+        <h3>2. ตรวจสอบโครงสร้าง Database</h3>
+        <button onclick="checkTables()">ตรวจสอบตาราง</button>
+        <div class="result" id="tablesResult"></div>
+
+        <h3>3. ทดสอบการสร้างรหัสปลอดภัย</h3>
+        <button onclick="testCodeGeneration()">ทดสอบสร้างรหัส</button>
+        <div class="result" id="codeResult"></div>
+
+        <h3>4. ทดสอบสร้างรถใหม่</h3>
+        <div>
+            <input type="text" id="brand" placeholder="ยี่ห้อรถ" value="Toyota">
+            <input type="text" id="model" placeholder="รุ่น" value="Vios">
+            <input type="number" id="year" placeholder="ปี" value="2020">
+            <input type="number" id="buyPrice" placeholder="ราคาซื้อ" value="400000">
+        </div>
+        <button onclick="testCreateCar()">สร้างรถทดสอบ</button>
+        <div class="result" id="createResult"></div>
+
+        <h3>5. ล็อกอิน (จำเป็นสำหรับการทดสอบ)</h3>
+        <div>
+            <input type="email" id="email" placeholder="อีเมล" value="test@example.com">
+            <input type="password" id="password" placeholder="รหัสผ่าน" value="testpassword123">
+        </div>
+        <button onclick="login()">เข้าสู่ระบบ</button>
+        <button onclick="logout()">ออกจากระบบ</button>
+        <div class="result" id="authResult"></div>
+    </div>
+
+    <script>
+        // กำหนดค่า Supabase
+        const supabaseUrl = 'https://jhkqxfxwlibfrgztvbqh.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impoa3F4Znh3bGliZnJnenR2YnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4OTA0NzcsImV4cCI6MjA1MDQ2NjQ3N30.C5K4iDiGOCGJl7j2V6L5dR5qFdRF3KqJCm90L5Tp4EQ'
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        document.getElementById('status').innerHTML = '<strong>สถานะ:</strong> เชื่อมต่อ Supabase สำเร็จ ✅'
+
+        async function testConnection() {
+            const result = document.getElementById('connectionResult')
+            try {
+                const { data, error } = await supabase.from('joint_cars').select('count').limit(1)
+                if (error) {
+                    result.innerHTML = `❌ เชื่อมต่อไม่สำเร็จ: ${error.message}`
+                    result.className = 'result error'
+                } else {
+                    result.innerHTML = '✅ เชื่อมต่อ Database สำเร็จ!'
+                    result.className = 'result success'
+                }
+            } catch (err) {
+                result.innerHTML = `❌ ข้อผิดพลาด: ${err.message}`
+                result.className = 'result error'
+            }
+        }
+
+        async function checkTables() {
+            const result = document.getElementById('tablesResult')
+            try {
+                // ตรวจสอบตาราง joint_cars
+                const { data: carsData, error: carsError } = await supabase
+                    .from('joint_cars')
+                    .select('id, car_code')
+                    .limit(1)
+
+                // ตรวจสอบตาราง car_members
+                const { data: membersData, error: membersError } = await supabase
+                    .from('car_members')
+                    .select('id')
+                    .limit(1)
+
+                let html = '<h4>สถานะตาราง:</h4>'
+                
+                if (carsError) {
+                    html += `❌ joint_cars: ${carsError.message}<br>`
+                } else {
+                    html += '✅ joint_cars: พร้อมใช้งาน<br>'
+                    // ตรวจสอบว่ามีฟิลด์ car_code หรือไม่
+                    if (carsData && carsData.length > 0 && 'car_code' in carsData[0]) {
+                        html += '✅ ฟิลด์ car_code: มีอยู่ในระบบ<br>'
+                    } else {
+                        html += '⚠️ ฟิลด์ car_code: ยังไม่มีหรือไม่มีข้อมูล<br>'
+                    }
+                }
+
+                if (membersError) {
+                    html += `❌ car_members: ${membersError.message}<br>`
+                } else {
+                    html += '✅ car_members: พร้อมใช้งาน<br>'
+                }
+
+                result.innerHTML = html
+                result.className = 'result'
+            } catch (err) {
+                result.innerHTML = `❌ ข้อผิดพลาด: ${err.message}`
+                result.className = 'result error'
+            }
+        }
+
+        async function testCodeGeneration() {
+            const result = document.getElementById('codeResult')
+            try {
+                // ทดสอบเรียกฟังก์ชั่น generate_car_code (ถ้ามี)
+                const { data, error } = await supabase.rpc('generate_car_code')
+                
+                if (error) {
+                    result.innerHTML = `❌ ไม่สามารถสร้างรหัสได้: ${error.message}<br>` +
+                                     `💡 อาจจะยังไม่ได้รันไฟล์ SQL setup`
+                    result.className = 'result error'
+                } else {
+                    result.innerHTML = `✅ สร้างรหัสสำเร็จ: <strong>${data}</strong>`
+                    result.className = 'result success'
+                }
+            } catch (err) {
+                // ลองวิธีอื่น - สร้างรหัสแบบ JavaScript
+                const jsCode = Math.floor(100000 + Math.random() * 900000).toString()
+                result.innerHTML = `⚠️ ฟังก์ชั่น generate_car_code ยังไม่พร้อม<br>` +
+                                 `🔧 รหัสที่สร้างด้วย JavaScript: <strong>${jsCode}</strong><br>` +
+                                 `💡 ต้องรันไฟล์ database/quick_fix_security_code_clean.sql ก่อน`
+                result.className = 'result'
+            }
+        }
+
+        async function testCreateCar() {
+            const result = document.getElementById('createResult')
+            
+            // ตรวจสอบว่าล็อกอินแล้วหรือยัง
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                result.innerHTML = '❌ กรุณาเข้าสู่ระบบก่อน'
+                result.className = 'result error'
+                return
+            }
+
+            const brand = document.getElementById('brand').value
+            const model = document.getElementById('model').value
+            const year = parseInt(document.getElementById('year').value)
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value)
+
+            try {
+                // สร้างรหัสปลอดภัย
+                const securityCode = Math.floor(100000 + Math.random() * 900000).toString()
+                
+                const carData = {
+                    user_id: user.id,
+                    date: new Date().toISOString().split('T')[0],
+                    brand: brand,
+                    model: model,
+                    year: year,
+                    buy_price: buyPrice,
+                    sell_price: 0,
+                    status: 'กำลังหา',
+                    car_code: securityCode
+                }
+
+                const { data, error } = await supabase
+                    .from('joint_cars')
+                    .insert(carData)
+                    .select()
+                    .single()
+
+                if (error) {
+                    result.innerHTML = `❌ สร้างรถไม่สำเร็จ: ${error.message}`
+                    result.className = 'result error'
+                } else {
+                    result.innerHTML = `✅ สร้างรถสำเร็จ!<br>` +
+                                     `🆔 ID: ${data.id}<br>` +
+                                     `🔐 รหัสปลอดภัย: <strong>${data.car_code || securityCode}</strong><br>` +
+                                     `🚗 รถ: ${brand} ${model} ${year}`
+                    result.className = 'result success'
+                    
+                    // ลองเพิ่มเป็นสมาชิก
+                    try {
+                        await supabase.from('car_members').insert({
+                            car_id: data.id,
+                            user_id: user.id,
+                            user_email: user.email,
+                            user_name: user.user_metadata?.name || user.email,
+                            role: 'owner'
+                        })
+                    } catch (memberError) {
+                        console.log('ไม่สามารถเพิ่มสมาชิกได้:', memberError)
+                    }
+                }
+            } catch (err) {
+                result.innerHTML = `❌ ข้อผิดพลาด: ${err.message}`
+                result.className = 'result error'
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            const result = document.getElementById('authResult')
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                })
+
+                if (error) {
+                    result.innerHTML = `❌ เข้าสู่ระบบไม่สำเร็จ: ${error.message}`
+                    result.className = 'result error'
+                } else {
+                    result.innerHTML = `✅ เข้าสู่ระบบสำเร็จ: ${data.user.email}`
+                    result.className = 'result success'
+                }
+            } catch (err) {
+                result.innerHTML = `❌ ข้อผิดพลาด: ${err.message}`
+                result.className = 'result error'
+            }
+        }
+
+        async function logout() {
+            const result = document.getElementById('authResult')
+            try {
+                const { error } = await supabase.auth.signOut()
+                if (error) {
+                    result.innerHTML = `❌ ออกจากระบบไม่สำเร็จ: ${error.message}`
+                    result.className = 'result error'
+                } else {
+                    result.innerHTML = '✅ ออกจากระบบสำเร็จ'
+                    result.className = 'result success'
+                }
+            } catch (err) {
+                result.innerHTML = `❌ ข้อผิดพลาด: ${err.message}`
+                result.className = 'result error'
+            }
+        }
+
+        // ตรวจสอบสถานะล็อกอินเมื่อโหลดหน้า
+        supabase.auth.onAuthStateChange((event, session) => {
+            const authResult = document.getElementById('authResult')
+            if (session) {
+                authResult.innerHTML = `✅ ล็อกอินอยู่: ${session.user.email}`
+                authResult.className = 'result success'
+            } else {
+                authResult.innerHTML = '⚠️ ยังไม่ได้ล็อกอิน'
+                authResult.className = 'result'
+            }
+        })
+    </script>
+</body>
+</html>

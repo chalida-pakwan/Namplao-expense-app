@@ -1,3 +1,58 @@
+---
+## ตัวอย่างโค้ดปุ่มสร้างรถแบบมีรหัสปลอดภัย (React/Next.js)
+
+```tsx
+// ฟังก์ชันสุ่มรหัส 6 หลัก
+function generateSecureCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// ฟังก์ชันสร้างรถ
+const handleCreateSecureCar = async () => {
+  try {
+    const code = generateSecureCode();
+
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!carName || !userId) {
+      alert("กรุณากรอกข้อมูลให้ครบก่อนสร้างรถ");
+      return;
+    }
+
+    // เรียก API หรือ Supabase
+    const res = await fetch("/api/cars/create", {
+      method: "POST",
+      body: JSON.stringify({
+        name: carName,
+        createdBy: userId,
+        secureCode: code,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.message || "ไม่สามารถสร้างรถได้");
+    }
+
+    alert(`🚗 รถถูกสร้างเรียบร้อยแล้ว!\n🔐 รหัสปลอดภัย: ${code}`);
+  } catch (err: any) {
+    alert("❌ เกิดข้อผิดพลาด: " + err.message);
+  }
+};
+
+// ตัวอย่างปุ่มใน React/Next.js
+<button
+  onClick={handleCreateSecureCar}
+  className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition"
+>
+  สร้างรถ & รับรหัสปลอดภัย
+</button>
+```
+
+---
 # 📦 Version History Summary
 *อัพเดทล่าสุด: 31 กรกฎาคม 2568*
 
@@ -66,10 +121,10 @@
 
 ### 🚀 Git Repository Status:
 - **Repository**: `chalida-pakwan/Namplao-expense-app`
-- **Latest Commit**: `d98b2ee` - v1.3 Deploy Ready ✅ **DEPLOYED**
-- **Previous Commit**: `09da5e6` - Production Build Ready
+- **Latest Commit**: `a327221` - Security Code Generation Fixed ✅ **DEPLOYED**
+- **Previous Commit**: `d98b2ee` - v1.3 Deploy Ready
 - **Branch**: `main` 🌐 **LIVE ON GITHUB**
-- **Status**: ✅ Successfully deployed with Receipt System v1.3
+- **Status**: ✅ Security code system with enhanced debugging
 
 ### 📍 Current Usage Flow:
 1. **🏠 Dashboard** → ภาพรวมและกราฟรายรับ-รายจ่าย

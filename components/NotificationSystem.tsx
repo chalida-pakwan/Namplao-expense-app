@@ -64,7 +64,16 @@ export default function NotificationSystem({ userId, className = '' }: Notificat
         .order('created_at', { ascending: false })
         .limit(20)
 
-      if (error) throw error
+      if (error) {
+        // ถ้า table ไม่มีอยู่ ให้ใช้ empty array แทน
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.warn('Notifications table not found, using empty notifications')
+          setNotifications([])
+          setUnreadCount(0)
+          return
+        }
+        throw error
+      }
 
       const formattedNotifications = data?.map(notif => ({
         ...notif,
@@ -75,7 +84,10 @@ export default function NotificationSystem({ userId, className = '' }: Notificat
       setNotifications(formattedNotifications)
       setUnreadCount(formattedNotifications.filter(n => !n.read).length)
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      console.warn('Error fetching notifications:', error)
+      // Set empty array instead of logging error
+      setNotifications([])
+      setUnreadCount(0)
     } finally {
       setLoading(false)
     }

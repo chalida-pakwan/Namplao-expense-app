@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Toaster } from 'react-hot-toast'
 import Navbar from './Navbar'
 import Footer from './Footer'  
 // import BottomNav from './BottomNav'
@@ -139,6 +140,52 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         
         {/* Mobile Bottom Navigation */}
         {/* {shouldShowBottomNav && <BottomNav />} */}
+        
+        {/* React Hot Toast */}
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          gutter={8}
+          containerClassName=""
+          containerStyle={{}}
+          toastOptions={{
+            // Default options for all toasts
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '500',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              maxWidth: '400px'
+            },
+            // Success
+            success: {
+              duration: 6000,
+              style: {
+                background: '#10B981',
+                color: '#fff'
+              },
+              iconTheme: {
+                primary: '#fff',
+                secondary: '#10B981'
+              }
+            },
+            // Error
+            error: {
+              duration: 6000,
+              style: {
+                background: '#EF4444',
+                color: '#fff'
+              },
+              iconTheme: {
+                primary: '#fff',
+                secondary: '#EF4444'
+              }
+            }
+          }}
+        />
       </div>
     </ErrorBoundary>
   )

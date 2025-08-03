@@ -31,52 +31,14 @@ export default function NewSecureCarPage() {
   const [investors, setInvestors] = useState<Investor[]>([
     { name: '', email: '', amount: 0, share_percentage: 0 }
   ])
-  
-  const addInvestor = () => {
-    setInvestors([...investors, { name: '', email: '', amount: 0, share_percentage: 0 }])
-  }
-  
-  const removeInvestor = (index: number) => {
-    if (investors.length > 1) {
-      setInvestors(investors.filter((_, i) => i !== index))
-    }
-  }
-  
-  const updateInvestor = (index: number, field: keyof Investor, value: string | number) => {
-    const updated = investors.map((investor, i) => 
-      i === index ? { ...investor, [field]: value } : investor
-    )
-    setInvestors(updated)
-  }
-
-  const validateForm = () => {
-    if (!brand.trim()) {
-      toast.error('กรุณาระบุยี่ห้อรถ')
-      return false
-    }
-    if (!model.trim()) {
-      toast.error('กรุณาระบุรุ่นรถ')
-      return false
-    }
-    if (!buyPrice || parseFloat(buyPrice) <= 0) {
-      toast.error('กรุณาระบุราคาซื้อที่ถูกต้อง')
-      return false
-    }
-    if (!sellPrice || parseFloat(sellPrice) <= 0) {
-      toast.error('กรุณาระบุราคาขายที่ถูกต้อง')
-      return false
-    }
-    if (parseFloat(sellPrice) <= parseFloat(buyPrice)) {
-      toast.error('ราคาขายต้องมากกว่าราคาซื้อ')
-      return false
-    }
-    return true
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) return
+    if (!brand.trim() || !model.trim() || !buyPrice) {
+      toast.error('กรุณากรอกข้อมูลพื้นฐานให้ครบถ้วน')
+      return
+    }
     
     try {
       setLoading(true)
@@ -98,7 +60,7 @@ export default function NewSecureCarPage() {
 
       // Calculate totals
       const totalInvestment = investors.reduce((sum, inv) => sum + inv.amount, 0)
-      const profit = parseFloat(sellPrice) - parseFloat(buyPrice) // กำไรจริง = ราคาขาย - ราคาซื้อ
+      const profit = parseFloat(sellPrice) - parseFloat(buyPrice)
       
       console.log('💰 Calculation details:', {
         sellPrice: parseFloat(sellPrice),
@@ -108,7 +70,7 @@ export default function NewSecureCarPage() {
         investorsCount: investors.filter(inv => inv.name.trim()).length
       })
 
-      // Prepare investors data in the correct format for database
+      // Prepare investors data
       const validInvestors = investors.filter(inv => inv.name.trim() && inv.amount > 0)
       const investorsJson = validInvestors.map(inv => ({
         name: inv.name.trim(),
@@ -119,27 +81,27 @@ export default function NewSecureCarPage() {
 
       console.log('👥 Processed investors data:', investorsJson)
       
-      // Create car data (must include required fields)
+      // Create car data
       const carData = {
-        user_id: user.id,  // ✅ ต้องมี (references auth.users)
-        date: new Date().toISOString().split('T')[0], // ✅ ต้องมี (NOT NULL)
-        brand: brand.trim(), // ✅ ต้องมี (NOT NULL)
-        model: model.trim(), // ✅ ต้องมี (NOT NULL)
-        year: year || null,  // ✅ nullable
-        buy_price: parseFloat(buyPrice) || 0, // ✅ ต้องมี (DEFAULT 0)
-        sell_price: parseFloat(sellPrice) || 0, // ✅ ต้องมี (DEFAULT 0)
-        profit: profit, // คำนวณกำไร
-        total_investment: totalInvestment, // รวมเงินลงทุน
-        status: status, // ✅ ต้องมี (DEFAULT 'กำลังหา')
-        notes: notes.trim() || null, // ✅ nullable
-        investors: investorsJson, // ข้อมูลนักลงทุนในรูปแบบ JSON
-        target_profit: targetProfit ? parseFloat(targetProfit) : null,
-        car_code: securityCode // รหัสรถ
+        user_id: user.id,
+        date: new Date().toISOString().split('T')[0],
+        brand: brand.trim(),
+        model: model.trim(),
+        year: year || null,
+        buy_price: parseFloat(buyPrice) || 0,
+        sell_price: parseFloat(sellPrice) || 0,
+        total_cost: parseFloat(buyPrice) || 0,
+        profit: profit || 0,
+        total_investment: totalInvestment || 0,
+        status: status || 'กำลังหา',
+        notes: notes.trim() || '',
+        investors: investorsJson,
+        car_code: securityCode
       }
 
       console.log('📦 Final car data for database:', carData)
 
-      // 🚀 INSERT CAR DATA TO DATABASE
+      // Insert car data
       const { data: carInsertData, error: carError } = await supabase
         .from('joint_cars')
         .insert([carData])
@@ -156,7 +118,7 @@ export default function NewSecureCarPage() {
       const carId = carInsertData.id
       let finalSecurityCode = carInsertData.car_code
 
-      // 🔐 ENSURE SECURITY CODE EXISTS
+      // Ensure security code exists
       if (!finalSecurityCode) {
         const generatedCode = Math.floor(100000 + Math.random() * 900000).toString()
         
@@ -167,7 +129,6 @@ export default function NewSecureCarPage() {
 
         if (updateError) {
           console.warn('⚠️ Could not update security code:', updateError)
-          // Use the original generated code even if database update failed
           finalSecurityCode = generatedCode
         } else {
           console.log('🔐 Security code updated in database:', generatedCode)
@@ -175,7 +136,7 @@ export default function NewSecureCarPage() {
         }
       }
 
-      // 👥 INSERT INVESTORS TO CAR_MEMBERS TABLE
+      // Insert investors to car_members table
       if (validInvestors.length > 0) {
         const memberEntries = validInvestors.map(investor => ({
           car_id: carId,
@@ -197,7 +158,7 @@ export default function NewSecureCarPage() {
         }
       }
 
-      // 🎯 ADD CREATOR AS OWNER
+      // Add creator as owner
       const { error: ownerError } = await supabase
         .from('car_members')
         .insert({
@@ -212,14 +173,13 @@ export default function NewSecureCarPage() {
         console.warn('⚠️ Could not add owner to members:', ownerError)
       }
 
-      // 🎉 SUCCESS NOTIFICATION
+      // Success notification
       const successMessage = `✅ สร้างรถคันใหม่สำเร็จ!\n` +
         `🚗 ${carData.brand} ${carData.model}\n` +
         `🔐 รหัสรถ: ${finalSecurityCode}\n` +
         `👥 นักลงทุน: ${validInvestors.length} คน\n` +
         `💰 เงินลงทุนรวม: ${totalInvestment.toLocaleString()} บาท`
       
-      // แสดงรหัสแบบหลายวิธี
       alert(successMessage)
       
       toast.success(
@@ -227,7 +187,6 @@ export default function NewSecureCarPage() {
         { duration: 8000 }
       )
 
-      // 🖥️ CONSOLE OUTPUT FOR DEBUGGING
       console.log('🎯 === FINAL RESULTS ===')
       console.log('Car ID:', carId)
       console.log('Security Code:', finalSecurityCode)
@@ -237,7 +196,7 @@ export default function NewSecureCarPage() {
       console.log('Expected profit:', profit.toLocaleString(), 'บาท')
       console.log('=== END RESULTS ===')
 
-      // 🔄 RESET FORM
+      // Reset form
       setBrand('')
       setModel('')
       setYear(new Date().getFullYear())
@@ -248,71 +207,92 @@ export default function NewSecureCarPage() {
       setNotes('')
       setInvestors([{ name: '', email: '', amount: 0, share_percentage: 0 }])
 
+      // Navigate to secure cars page
+      setTimeout(() => {
+        router.push('/secure-cars')
+      }, 2000)
+
     } catch (error) {
       console.error('💥 Unexpected error:', error)
-      toast.error(`เกิดข้อผิดพลาดที่ไม่คาดคิด: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error('เกิดข้อผิดพลาดที่ไม่คาดคิด')
     } finally {
       setLoading(false)
     }
   }
-  
+
+  const addInvestor = () => {
+    setInvestors([...investors, { name: '', email: '', amount: 0, share_percentage: 0 }])
+  }
+
+  const removeInvestor = (index: number) => {
+    if (investors.length > 1) {
+      setInvestors(investors.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateInvestor = (index: number, field: keyof Investor, value: any) => {
+    const updated = [...investors]
+    updated[index] = { ...updated[index], [field]: value }
+    setInvestors(updated)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  🚗 เพิ่มรถคันใหม่
-                </h1>
-                <p className="text-gray-600">
-                  สร้างโครงการรถคันใหม่พร้อมระบบรหัสปลอดภัย
-                </p>
-              </div>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
               <Link 
-                href="/secure-cars" 
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                href="/secure-cars"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
               >
-                ← กลับ
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
               </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-green-600">🆕</span>
+                  สร้างรถใหม่
+                </h1>
+                <p className="text-gray-600 mt-1">ระบบหารรถแบบปลอดภัย • รหัสเฉพาะ 6 หลัก</p>
+              </div>
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8">
             {/* Car Basic Info */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                📋 ข้อมูลพื้นฐานของรถ
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span>🚗</span>
+                ข้อมูลพื้นฐานรถ
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ยี่ห้อรถ *
+                    ยี่ห้อ *
                   </label>
                   <input
                     type="text"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="เช่น Toyota, Honda, BMW"
+                    placeholder="เช่น Toyota, Honda"
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    รุ่นรถ *
+                    รุ่น *
                   </label>
                   <input
                     type="text"
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="เช่น Camry, Civic, X5"
+                    placeholder="เช่น Camry, Civic"
                     required
                   />
                 </div>
@@ -324,10 +304,10 @@ export default function NewSecureCarPage() {
                   <input
                     type="number"
                     value={year}
-                    onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear())}
+                    onChange={(e) => setYear(parseInt(e.target.value))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="1990"
-                    max="2030"
+                    max={new Date().getFullYear() + 5}
                   />
                 </div>
 
@@ -341,17 +321,19 @@ export default function NewSecureCarPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="กำลังหา">กำลังหา</option>
-                    <option value="ได้แล้ว">ได้แล้ว</option>
+                    <option value="ซื้อแล้ว">ซื้อแล้ว</option>
                     <option value="ขายแล้ว">ขายแล้ว</option>
+                    <option value="ยกเลิก">ยกเลิก</option>
                   </select>
                 </div>
               </div>
             </div>
 
             {/* Price Info */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                💰 ข้อมูลราคา
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span>💰</span>
+                ข้อมูลราคา
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -373,7 +355,7 @@ export default function NewSecureCarPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ราคาขาย (บาท) *
+                    ราคาขายเป้าหมาย (บาท)
                   </label>
                   <input
                     type="number"
@@ -383,121 +365,95 @@ export default function NewSecureCarPage() {
                     placeholder="0"
                     min="0"
                     step="1000"
-                    required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    กำไรเป้าหมาย (บาท)
+                    กำไรคาดหวัง (บาท)
                   </label>
                   <input
                     type="number"
-                    value={targetProfit}
-                    onChange={(e) => setTargetProfit(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0"
-                    min="0"
-                    step="1000"
+                    value={buyPrice && sellPrice ? (parseFloat(sellPrice) - parseFloat(buyPrice)).toString() : ''}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                    placeholder="คำนวณอัตโนมัติ"
+                    disabled
                   />
                 </div>
               </div>
-
-              {/* Profit Display */}
-              {buyPrice && sellPrice && parseFloat(sellPrice) > parseFloat(buyPrice) && (
-                <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-green-800 font-medium">
-                    💹 กำไรที่คาดการณ์: {(parseFloat(sellPrice) - parseFloat(buyPrice)).toLocaleString()} บาท
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Investors */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  👥 นักลงทุน
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                  <span>👥</span>
+                  นักลงทุน
                 </h2>
                 <button
                   type="button"
                   onClick={addInvestor}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm"
                 >
                   + เพิ่มนักลงทุน
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 {investors.map((investor, index) => (
-                  <div key={index} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-600">
                         นักลงทุนคนที่ {index + 1}
-                      </h3>
+                      </span>
                       {investors.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeInvestor(index)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-red-500 hover:text-red-700 text-sm"
                         >
                           ลบ
                         </button>
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          ชื่อ
-                        </label>
                         <input
                           type="text"
+                          placeholder="ชื่อ"
                           value={investor.name}
                           onChange={(e) => updateInvestor(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="ชื่อนักลงทุน"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         />
                       </div>
-                      
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          อีเมล
-                        </label>
                         <input
                           type="email"
+                          placeholder="อีเมล (ไม่บังคับ)"
                           value={investor.email}
                           onChange={(e) => updateInvestor(index, 'email', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="example@email.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         />
                       </div>
-                      
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          จำนวนเงิน (บาท)
-                        </label>
                         <input
                           type="number"
+                          placeholder="จำนวนเงิน"
                           value={investor.amount}
                           onChange={(e) => updateInvestor(index, 'amount', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                           min="0"
                           step="1000"
                         />
                       </div>
-                      
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          สัดส่วน (%)
-                        </label>
                         <input
                           type="number"
+                          placeholder="สัดส่วน %"
                           value={investor.share_percentage}
                           onChange={(e) => updateInvestor(index, 'share_percentage', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                           min="0"
                           max="100"
                           step="0.1"
@@ -508,49 +464,50 @@ export default function NewSecureCarPage() {
                 ))}
               </div>
 
-              {/* Total Investment Display */}
-              {investors.some(inv => inv.amount > 0) && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-blue-800 font-medium">
-                    💰 รวมเงินลงทุน: {investors.reduce((sum, inv) => sum + inv.amount, 0).toLocaleString()} บาท
-                  </p>
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="text-sm text-blue-800">
+                  <strong>เงินลงทุนรวม:</strong> {investors.reduce((sum, inv) => sum + inv.amount, 0).toLocaleString()} บาท
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Notes */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                📝 หมายเหตุ
-              </h2>
-              
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                หมายเหตุ
+              </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={4}
-                placeholder="หมายเหตุเพิ่มเติม เช่น สภาพรถ, อุปกรณ์พิเศษ, หรือข้อมูลอื่นๆ"
+                rows={3}
+                placeholder="รายละเอียดเพิ่มเติม..."
               />
             </div>
 
             {/* Submit Button */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
-                >
-                  {loading ? '🔄 กำลังบันทึก...' : '🚗 สร้างรถคันใหม่'}
-                </button>
-                
-                <Link
-                  href="/secure-cars"
-                  className="px-6 py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-lg font-medium"
-                >
-                  ยกเลิก
-                </Link>
-              </div>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-lg"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                    กำลังสร้างรถ...
+                  </span>
+                ) : (
+                  '🚗 สร้างรถใหม่'
+                )}
+              </button>
+              
+              <Link
+                href="/secure-cars"
+                className="bg-gray-500 text-white py-4 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium text-lg text-center"
+              >
+                ยกเลิก
+              </Link>
             </div>
           </form>
         </div>

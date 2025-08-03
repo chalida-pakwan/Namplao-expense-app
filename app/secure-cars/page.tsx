@@ -15,7 +15,7 @@ interface SecureCar {
   buy_price: number
   sell_price: number | null
   status: string
-  created_by: string
+  user_id: string  // ✅ แก้จาก created_by เป็น user_id ตาม database schema
   created_at: string
   member_count?: number
   total_expenses?: number
@@ -55,10 +55,33 @@ export default function SecureCarsPage() {
   const loadSecureCars = async (userId: string) => {
     try {
       setLoading(true)
+      console.log('🔍 Loading secure cars for user:', userId)
 
-      // ดึงรถที่ผู้ใช้เป็นสมาชิก พร้อมข้อมูลสถิติ (car_code ปกป้องแล้ว)
-      const { data: carsData, error } = await supabase
-        .from('joint_cars_member_view')
+      // ดึงรถที่ผู้ใช้เป็นสมาชิก ผ่าน car_members table
+      const { data: memberData, error: memberError } = await supabase
+        .from('car_members')
+        .select('car_id')
+        .eq('user_id', userId)
+
+      if (memberError) {
+        console.error('Error fetching member data:', memberError)
+        toast.error('เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิก')
+        return
+      }
+
+      console.log('👥 Member data:', memberData)
+
+      const carIds = memberData?.map(member => member.car_id) || []
+      
+      if (carIds.length === 0) {
+        console.log('📦 No cars found for user')
+        setCars([])
+        return
+      }
+
+      // ดึงข้อมูลรถจาก joint_cars table
+      const { data: carsData, error: carsError } = await supabase
+        .from('joint_cars')
         .select(`
           id,
           car_code,
@@ -68,16 +91,19 @@ export default function SecureCarsPage() {
           buy_price,
           sell_price,
           status,
-          created_by,
+          user_id,
           created_at
         `)
+        .in('id', carIds)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading cars:', error)
+      if (carsError) {
+        console.error('Error fetching cars:', carsError)
         toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลรถ')
         return
       }
+
+      console.log('🚗 Cars data:', carsData)
 
       if (!carsData || carsData.length === 0) {
         setCars([])
@@ -93,20 +119,20 @@ export default function SecureCarsPage() {
             .select('*', { count: 'exact' })
             .eq('car_id', car.id)
 
-          // รวมค่าใช้จ่ายทั้งหมด
+          // รวมค่าใช้จ่ายทั้งหมด (ใช้ joint_car_additional_expenses ตาม schema หลัก)
           const { data: totalExpenses } = await supabase
-            .from('car_expenses')
+            .from('joint_car_additional_expenses')
             .select('amount')
-            .eq('car_id', car.id)
+            .eq('joint_car_id', car.id)
 
           const totalAmount = totalExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
 
-          // รวมค่าใช้จ่ายของผู้ใช้
+          // รวมค่าใช้จ่ายของผู้ใช้ (ใช้ joint_car_additional_expenses)  
           const { data: myExpenses } = await supabase
-            .from('car_expenses')
+            .from('joint_car_additional_expenses')
             .select('amount')
-            .eq('car_id', car.id)
-            .eq('created_by', userId)
+            .eq('joint_car_id', car.id)
+            .eq('added_by', userId)
 
           const myAmount = myExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
 
@@ -120,8 +146,9 @@ export default function SecureCarsPage() {
       )
 
       setCars(carsWithStats)
+      console.log('✅ Secure cars loaded successfully:', carsWithStats.length)
     } catch (error) {
-      console.error('Error loading secure cars:', error)
+      console.error('Error fetching cars:', error)
       toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล')
     } finally {
       setLoading(false)
